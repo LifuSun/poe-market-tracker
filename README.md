@@ -23,7 +23,7 @@ Path of Exile Currency Tracker is a tool to track the prices of various currenci
 
 ### Prerequisites
 - Node.js
-- MySQL
+- MariaDB
 
 ### Steps
 1. Clone the repository:

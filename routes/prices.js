@@ -54,7 +54,7 @@ const makeHttpsRequest = (url, method = 'GET', payload = null) => {
         });
 
         req.on('error', (e) => {
-            reject(e);
+            reject(new Error(`Request failed for URL: ${url}. Error: ${e.message}`));
         });
 
         if (payload) {
@@ -70,11 +70,18 @@ router.get('/prices/:short_name', async (req, res) => {
     const { short_name } = req.params;
     const { league_id } = req.query;
 
-    try {
-        // Connect to the database
-        const connection = await mysql.createConnection(dbConfig);
+    if (!/^[a-zA-Z0-9]+$/.test(short_name)) {
+        return res.status(400).json({ error: 'Invalid currency short name' });
+    }
 
-        // Get the name of the currency from the database
+    if (league_id && !Number.isInteger(Number(league_id))) {
+        return res.status(400).json({ error: 'Invalid league ID' });
+    }
+
+    let connection;
+    try {
+        connection = await mysql.createConnection(dbConfig);
+
         const [currencyRows] = await connection.execute(
             `SELECT name FROM currencies WHERE short_name = ?`,
             [short_name]
@@ -86,7 +93,6 @@ router.get('/prices/:short_name', async (req, res) => {
 
         const currencyName = currencyRows[0].name;
 
-        // Determine the league to search in
         let leagueToSearch = 'Standard';
         if (league_id) {
             const [leagueRows] = await connection.execute(
@@ -101,13 +107,17 @@ router.get('/prices/:short_name', async (req, res) => {
             leagueToSearch = leagueRows[0].name;
         }
 
-        // Define the search payload for the Path of Exile Trade API
         const searchPayload = {
             query: {
                 status: { option: 'online' },
                 type: currencyName,
                 stats: [{ type: 'and', filters: [] }],
                 filters: {
+                    type_filters: {
+                        filters: {
+                            category: { option: 'currency' }, // Ensure the item is a currency
+                        },
+                    },
                     trade_filters: {
                         disabled: false,
                         filters: {
@@ -121,33 +131,41 @@ router.get('/prices/:short_name', async (req, res) => {
             sort: { price: 'asc' },
         };
 
-        // Step 1: Search for the currency listed for sale
         const searchData = await makeHttpsRequest(`${TRADE_API_URL}${leagueToSearch}`, 'POST', searchPayload);
-
-        // Log the number of results returned by the search API
         console.log(`Number of results returned by search API: ${searchData.result.length}`);
 
-        // Step 2: Fetch the listings in batches to get more results
         const batchSize = 10;
         let prices = [];
         for (let i = 0; i < searchData.result.length; i += batchSize) {
             const itemIds = searchData.result.slice(i, i + batchSize);
-            const fetchData = await makeHttpsRequest(`${FETCH_ITEM_URL}${itemIds.join(',')}`);
-            const batchPrices = fetchData.result.map((item) => {
-                return {
-                    listing: item.listing,
-                    price: item.listing.price,
-                };
-            });
-            prices = prices.concat(batchPrices);
+            if (itemIds.length > 0) {
+                const fetchData = await makeHttpsRequest(`${FETCH_ITEM_URL}${itemIds.join(',')}`);
+                const batchPrices = fetchData.result.map((item) => {
+                    return {
+                        listing: item.listing,
+                        price: item.listing.price,
+                    };
+                });
+                prices = prices.concat(batchPrices);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 1000)); // Rate limiting
         }
 
-        // Step 3: Send the prices as a JSON response
-        res.json({ prices });
+        const averagePrice = prices.reduce((sum, item) => sum + item.price.amount, 0) / prices.length;
+
+        res.json({
+            currency: currencyName,
+            league: leagueToSearch,
+            averagePrice: averagePrice,
+            prices: prices,
+        });
     } catch (error) {
-        // Handle errors
         console.error('Error fetching currency price:', error);
         res.status(500).json({ error: 'Failed to fetch currency price' });
+    } finally {
+        if (connection) {
+            await connection.end();
+        }
     }
 });
 

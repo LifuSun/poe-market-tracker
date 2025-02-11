@@ -54,8 +54,8 @@ const makeHttpsRequest = (url) => {
     });
 };
 
-// Route to fetch and return a list of all currency items
-router.get('/currencies', async (req, res) => {
+// Function to fetch and insert currency data
+const fetchAndInsertCurrencies = async () => {
     try {
         // Fetch data from the Path of Exile API
         const data = await makeHttpsRequest(STATIC_DATA_URL);
@@ -88,14 +88,20 @@ router.get('/currencies', async (req, res) => {
             }
         }
         await connection.end();
-
-        // Send the currency items as a JSON response
-        res.json(currencyItems);
     } catch (error) {
-        // Handle errors
+        console.error('Error fetching currency items:', error);
+    }
+};
+
+// Route to fetch and return a list of all currency items
+router.get('/currencies', async (req, res) => {
+    try {
+        await fetchAndInsertCurrencies();
+        res.json({ message: 'Currencies fetched and inserted successfully' });
+    } catch (error) {
         console.error('Error fetching currency items:', error);
         res.status(500).json({ error: 'Failed to fetch currency items' });
     }
 });
 
-module.exports = router;
+module.exports = { router, fetchAndInsertCurrencies };

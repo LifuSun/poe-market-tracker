@@ -54,21 +54,14 @@ const makeHttpsRequest = (url) => {
     });
 };
 
-// Helper function to convert ISO datetime to MySQL DATETIME format
-const convertToMySQLDatetime = (isoDatetime) => {
-    if (!isoDatetime) return null;
-    return isoDatetime.replace('T', ' ').replace('Z', '');
-};
-
-// Route to fetch and display league data
-router.get('/leagues', async (req, res) => {
+// Function to fetch and insert league data
+const fetchAndInsertLeagues = async () => {
     try {
         // Fetch data from the Path of Exile API
         const data = await makeHttpsRequest(POE_API_URL);
 
         // Filter the data based on the criteria
         const filteredData = data.filter(league => 
-            league.category.id !== 'Standard' && 
             league.category.current === true && 
             league.realm === 'pc'
         );
@@ -99,14 +92,26 @@ router.get('/leagues', async (req, res) => {
             }
         }
         await connection.end();
-
-        // Send the filtered data as a JSON response
-        res.json(filteredData);
     } catch (error) {
-        // Handle errors
+        console.error('Error fetching league data:', error);
+    }
+};
+
+// Helper function to convert ISO datetime to MySQL DATETIME format
+const convertToMySQLDatetime = (isoDatetime) => {
+    if (!isoDatetime) return null;
+    return isoDatetime.replace('T', ' ').replace('Z', '');
+};
+
+// Route to fetch and display league data
+router.get('/leagues', async (req, res) => {
+    try {
+        await fetchAndInsertLeagues();
+        res.json({ message: 'Leagues fetched and inserted successfully' });
+    } catch (error) {
         console.error('Error fetching league data:', error);
         res.status(500).json({ error: 'Failed to fetch league data' });
     }
 });
 
-module.exports = router;
+module.exports = { router, fetchAndInsertLeagues };

@@ -66,11 +66,11 @@ const makeHttpsRequest = (url, method = 'GET', payload = null) => {
 };
 
 // Route to get the price of an item relative to chaos orbs
-router.get('/prices/:short_name', async (req, res) => {
-    const { short_name } = req.params;
+router.get('/prices/:shortName', async (req, res) => {
+    const { shortName } = req.params;
     const { league_id } = req.query;
 
-    if (!/^[a-zA-Z0-9]+$/.test(short_name)) {
+    if (!/^[a-zA-Z0-9]+$/.test(shortName)) {
         return res.status(400).json({ error: 'Invalid currency short name' });
     }
 
@@ -83,8 +83,8 @@ router.get('/prices/:short_name', async (req, res) => {
         connection = await mysql.createConnection(dbConfig);
 
         const [currencyRows] = await connection.execute(
-            `SELECT name FROM currencies WHERE short_name = ?`,
-            [short_name]
+            `SELECT name FROM currencies WHERE shortName = ?`,
+            [shortName]
         );
 
         if (currencyRows.length === 0) {

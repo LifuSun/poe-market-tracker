@@ -21,7 +21,7 @@ This project is a market tracker for Path of Exile, allowing users to fetch pric
     npm install
     ```
 
-3. Create a [.env](http://_vscodecontentref_/2) file in the root directory and add your database configuration:
+3. Create a [.env](http://_vscodecontentref_/4) file in the root directory and add your database configuration:
     ```env
     DB_HOST=your_database_host
     DB_USER=your_database_user
@@ -36,12 +36,59 @@ This project is a market tracker for Path of Exile, allowing users to fetch pric
 
 ## Usage
 
-1. Start the server:
-    ```sh
-    npm start
-    ```
+1. Start the server as a service:
+    - Create a systemd service unit file:
+        ```sh
+        sudo nano /etc/systemd/system/poe-market-tracker.service
+        ```
 
-2. The server will be running on `http://localhost:3000`.
+    - Add the following content to the `poe-market-tracker.service` file:
+        ```ini
+        [Unit]
+        Description=Path of Exile Market Tracker Service
+        After=network.target
+
+        [Service]
+        ExecStart=/usr/local/bin/node /var/www/poe-market-tracker/index.js
+        WorkingDirectory=/var/www/poe-market-tracker
+        Restart=on-failure
+        User=your_username
+        Environment=PATH=/usr/bin:/usr/local/bin
+        Environment=NODE_ENV=production
+        EnvironmentFile=/var/www/poe-market-tracker/.env
+        StandardOutput=syslog
+        StandardError=syslog
+        SyslogIdentifier=poe-market-tracker
+
+        [Install]
+        WantedBy=multi-user.target
+        ```
+
+    - Reload systemd to recognize the new service unit file:
+        ```sh
+        sudo systemctl daemon-reload
+        ```
+
+    - Start the service:
+        ```sh
+        sudo systemctl start poe-market-tracker
+        ```
+
+    - Enable the service to start on boot:
+        ```sh
+        sudo systemctl enable poe-market-tracker
+        ```
+
+2. Schedule the [run-update.js](http://_vscodecontentref_/5) script to run at midnight every day:
+    - Open the crontab editor:
+        ```sh
+        crontab -e
+        ```
+
+    - Add the following line to schedule the script to run at midnight every day:
+        ```sh
+        0 0 * * * /usr/local/bin/node /var/www/poe-market-tracker/run-update.js >> /var/www/poe-market-tracker/logs/updates.log 2>&1
+        ```
 
 ## Endpoints
 
@@ -50,7 +97,7 @@ This project is a market tracker for Path of Exile, allowing users to fetch pric
 - **URL:** `/api/prices/:short_name`
 - **Method:** `GET`
 - **Query Parameters:**
-  - [league_id](http://_vscodecontentref_/3) (optional): The ID of the league to search in. If not provided, the default league is `Standard`.
+  - `league_id` (optional): The ID of the league to search in. If not provided, the default league is `Standard`.
 
 - **Example:**
   - Get prices for Divine Orbs in the Standard league:
@@ -66,10 +113,10 @@ This project is a market tracker for Path of Exile, allowing users to fetch pric
 
 The following npm modules are used in this project:
 
-- [express](http://_vscodecontentref_/4): Fast, unopinionated, minimalist web framework for Node.js
-- [https](http://_vscodecontentref_/5): Node.js module for making HTTPS requests
+- `express`: Fast, unopinionated, minimalist web framework for Node.js
+- `https`: Node.js module for making HTTPS requests
 - `mysql2/promise`: MySQL client for Node.js with Promise support
-- `dotenv`: Loads environment variables from a [.env](http://_vscodecontentref_/6) file into [process.env](http://_vscodecontentref_/7)
+- `dotenv`: Loads environment variables from a [.env](http://_vscodecontentref_/6) file into `process.env`
 
 ## License
 

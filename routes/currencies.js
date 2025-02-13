@@ -71,9 +71,9 @@ const fetchAndInsertCurrencies = async () => {
             );
 
             const now = new Date();
-            const shortName = currency.id;
-            const name = currency.text;
-            const imageUrl = currency.image;
+            const shortName = currency.id || null;
+            const name = currency.text || 'Unknown'; // Provide a default value if name is null
+            const imageUrl = currency.image || 'Unknown';
 
             if (rows.length === 0) {
                 await connection.execute(

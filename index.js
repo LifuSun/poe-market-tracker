@@ -19,8 +19,13 @@ app.use('/api', currenciesRouter);
 
 // Start the server and check/create tables
 app.listen(PORT, async () => {
-    await checkAndCreateTables();
-    console.log(`Server is running on http://localhost:${PORT}`);
+    try {
+        await checkAndCreateTables();
+        console.log(`Server is running on http://localhost:${PORT}`);
+    } catch (error) {
+        console.error('Error starting the server:', error);
+        process.exit(1); // Exit the process with an error code
+    }
 });
 
 module.exports = app;

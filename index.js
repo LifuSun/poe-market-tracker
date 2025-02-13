@@ -1,8 +1,8 @@
 const express = require('express');
 const { checkAndCreateTables } = require('./db');
 const pricesRouter = require('./routes/prices');
-const { router: leaguesRouter, fetchAndInsertLeagues } = require('./routes/leagues');
-const { router: currenciesRouter, fetchAndInsertCurrencies } = require('./routes/currencies');
+const leaguesRouter = require('./routes/leagues');
+const currenciesRouter = require('./routes/currencies');
 require('dotenv').config();
 
 const app = express();
@@ -20,7 +20,7 @@ app.use('/api', currenciesRouter);
 // Start the server and check/create tables
 app.listen(PORT, async () => {
     await checkAndCreateTables();
-    await fetchAndInsertLeagues();
-    await fetchAndInsertCurrencies();
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+module.exports = app;

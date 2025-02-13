@@ -4,9 +4,6 @@ const mysql = require('mysql2/promise');
 const router = express.Router();
 require('dotenv').config();
 
-// Define the Path of Exile API endpoint for static data
-const STATIC_DATA_URL = 'https://www.pathofexile.com/api/trade/data/static';
-
 // Database configuration
 const dbConfig = {
     host: process.env.DB_HOST,
@@ -14,6 +11,9 @@ const dbConfig = {
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
 };
+
+// Define the Path of Exile API endpoint for currencies
+const POE_API_URL = 'https://www.pathofexile.com/api/trade/data/static';
 
 // Helper function to make HTTPS requests
 const makeHttpsRequest = (url) => {
@@ -23,19 +23,18 @@ const makeHttpsRequest = (url) => {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
                 'Accept': 'application/json',
                 'Accept-Language': 'en-US,en;q=0.9',
-                'Connection': 'keep-alive'
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/json'
             }
         };
 
         https.get(url, options, (res) => {
             let data = '';
 
-            // A chunk of data has been received.
             res.on('data', (chunk) => {
                 data += chunk;
             });
 
-            // The whole response has been received.
             res.on('end', () => {
                 if (res.statusCode >= 200 && res.statusCode < 300) {
                     try {
@@ -54,54 +53,71 @@ const makeHttpsRequest = (url) => {
     });
 };
 
-// Function to fetch and insert currency data
+// Function to fetch and insert/update currency data
 const fetchAndInsertCurrencies = async () => {
     try {
         // Fetch data from the Path of Exile API
-        const data = await makeHttpsRequest(STATIC_DATA_URL);
+        const data = await makeHttpsRequest(POE_API_URL);
 
-        // Filter the data to get currency items
-        const currencyItems = data.result.filter(item => item.id === 'Currency');
+        // Filter the data to get only currency information
+        const currencyData = data.result.filter(entry => entry.id === 'Currency')[0].entries;
 
-        // Insert data into the currencies table
+        // Insert or update data in the currencies table
         const connection = await mysql.createConnection(dbConfig);
-        for (const currency of currencyItems) {
-            for (const entry of currency.entries) {
-                const [rows] = await connection.execute(
-                    `SELECT short_name FROM currencies WHERE short_name = ?`,
-                    [entry.id]
-                );
+        for (const currency of currencyData) {
+            const [rows] = await connection.execute(
+                `SELECT * FROM currencies WHERE shortName = ?`,
+                [currency.id]
+            );
 
-                if (rows.length === 0) {
-                    // Ensure that the name and image_url are not null
-                    const name = entry.text || 'Unknown Currency';
-                    const imageUrl = entry.image || 'default_image_url'; // Replace 'default_image_url' with an actual default URL if needed
+            const now = new Date();
+            const shortName = currency.id;
+            const name = currency.text;
+            const imageUrl = currency.image;
+
+            if (rows.length === 0) {
+                await connection.execute(
+                    `INSERT INTO currencies (shortName, name, imageUrl, checkedAt, updatedAt) VALUES (?, ?, ?, ?, ?)`,
+                    [
+                        shortName,
+                        name,
+                        imageUrl,
+                        now,
+                        now
+                    ]
+                );
+            } else {
+                const row = rows[0];
+                if (row.name !== name || row.imageUrl !== imageUrl) {
                     await connection.execute(
-                        `INSERT INTO currencies (short_name, name, image_url) VALUES (?, ?, ?)`,
+                        `UPDATE currencies SET name = ?, imageUrl = ?, checkedAt = ?, updatedAt = ? WHERE shortName = ?`,
                         [
-                            entry.id || null,
                             name,
-                            imageUrl
+                            imageUrl,
+                            now,
+                            now,
+                            shortName
+                        ]
+                    );
+                } else {
+                    await connection.execute(
+                        `UPDATE currencies SET checkedAt = ? WHERE shortName = ?`,
+                        [
+                            now,
+                            shortName
                         ]
                     );
                 }
             }
         }
+
         await connection.end();
     } catch (error) {
-        console.error('Error fetching currency items:', error);
+        console.error('Error fetching and inserting currencies:', error);
     }
 };
 
-// Route to fetch and return a list of all currency items
-router.get('/currencies', async (req, res) => {
-    try {
-        await fetchAndInsertCurrencies();
-        res.json({ message: 'Currencies fetched and inserted successfully' });
-    } catch (error) {
-        console.error('Error fetching currency items:', error);
-        res.status(500).json({ error: 'Failed to fetch currency items' });
-    }
-});
+// Run the fetchAndInsertCurrencies function
+fetchAndInsertCurrencies();
 
-module.exports = { router, fetchAndInsertCurrencies };
+module.exports = router;

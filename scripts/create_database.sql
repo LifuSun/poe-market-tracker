@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS prices (
     iqtMode DECIMAL(10, 2),
     iqtMedian DECIMAL(10, 2),
     iqtMean DECIMAL(10, 2),
+    checkedAt DATETIME,
     FOREIGN KEY (leagueId) REFERENCES leagues(id),
     FOREIGN KEY (wantCurrencyId) REFERENCES currencies(id),
     FOREIGN KEY (haveCurrencyId) REFERENCES currencies(id)

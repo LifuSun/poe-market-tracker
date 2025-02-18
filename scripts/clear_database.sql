@@ -10,5 +10,8 @@ DROP TABLE IF EXISTS leagues;
 -- Drop the currencies table
 DROP TABLE IF EXISTS currencies;
 
+-- Drop the prices table
+DROP TABLE IF EXISTS prices;
+
 -- Enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;

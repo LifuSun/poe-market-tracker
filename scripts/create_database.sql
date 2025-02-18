@@ -29,3 +29,25 @@ CREATE TABLE IF NOT EXISTS currencies (
     checkedAt DATETIME,
     updatedAt DATETIME
 );
+
+-- Create the prices table
+CREATE TABLE IF NOT EXISTS prices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    leagueId INT NOT NULL,
+    wantCurrencyId INT NOT NULL,
+    haveCurrencyId INT NOT NULL,
+    upperQuartile DECIMAL(10, 2),
+    lowerQuartile DECIMAL(10, 2),
+    mode DECIMAL(10, 2),
+    median DECIMAL(10, 2),
+    mean DECIMAL(10, 2),
+    lowest DECIMAL(10, 2),
+    highest DECIMAL(10, 2),
+    interQuartileRange DECIMAL(10, 2),
+    iqtMode DECIMAL(10, 2),
+    iqtMedian DECIMAL(10, 2),
+    iqtMean DECIMAL(10, 2),
+    FOREIGN KEY (leagueId) REFERENCES leagues(id),
+    FOREIGN KEY (wantCurrencyId) REFERENCES currencies(id),
+    FOREIGN KEY (haveCurrencyId) REFERENCES currencies(id)
+);

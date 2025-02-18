@@ -131,8 +131,14 @@ router.get('/prices/:shortName', async (req, res) => {
             sort: { price: 'asc' },
         };
 
+        console.log('Search Payload:', JSON.stringify(searchPayload, null, 2));
+
         const searchData = await makeHttpsRequest(`${TRADE_API_URL}${leagueToSearch}`, 'POST', searchPayload);
         console.log(`Number of results returned by search API: ${searchData.result.length}`);
+
+        if (!searchData.result || searchData.result.length === 0) {
+            return res.status(404).json({ error: 'No results found for the specified currency and league' });
+        }
 
         const batchSize = 10;
         let prices = [];
@@ -140,15 +146,21 @@ router.get('/prices/:shortName', async (req, res) => {
             const itemIds = searchData.result.slice(i, i + batchSize);
             if (itemIds.length > 0) {
                 const fetchData = await makeHttpsRequest(`${FETCH_ITEM_URL}${itemIds.join(',')}`);
-                const batchPrices = fetchData.result.map((item) => {
-                    return {
-                        listing: item.listing,
-                        price: item.listing.price,
-                    };
-                });
-                prices = prices.concat(batchPrices);
+                if (fetchData.result) {
+                    const batchPrices = fetchData.result.map((item) => {
+                        return {
+                            listing: item.listing,
+                            price: item.listing.price,
+                        };
+                    });
+                    prices = prices.concat(batchPrices);
+                }
             }
             await new Promise((resolve) => setTimeout(resolve, 1000)); // Rate limiting
+        }
+
+        if (prices.length === 0) {
+            return res.status(404).json({ error: 'No prices found for the specified currency and league' });
         }
 
         const averagePrice = prices.reduce((sum, item) => sum + item.price.amount, 0) / prices.length;

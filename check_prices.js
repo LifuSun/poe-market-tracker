@@ -64,6 +64,9 @@ const makeHttpsRequest = (url, method = 'GET', payload = null) => {
     });
 };
 
+// Helper function to add a delay
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const runPrices = async () => {
     exec('systemctl is-active poe-market-tracker.service', async (error, stdout) => {
         if (error) {
@@ -93,6 +96,7 @@ const runPrices = async () => {
                         } catch (error) {
                             console.error(`Error fetching and processing prices for ${currency} in league ${leagueId}:`, error);
                         }
+                        await delay(10000); // Add a 10-second delay between each call
                     }
                 }
             } catch (error) {

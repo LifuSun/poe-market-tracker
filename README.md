@@ -109,6 +109,19 @@ This project is a market tracker for Path of Exile, allowing users to fetch pric
     GET /api/prices/divine?league_id=1
     ```
 
+## New Features
+
+### Automated Price Updates
+
+The `check_prices.js` script now includes functionality to automatically fetch and process prices for all currencies and leagues. It includes a 10-second delay between each call to avoid hitting rate limits.
+
+- **Script:** `check_prices.js`
+- **Functionality:**
+  - Fetches all shortNames from the `currencies` table.
+  - Fetches all IDs from the `leagues` table.
+  - Runs the endpoint against every combination of currencies and leagues.
+  - Adds a 10-second delay between each call to avoid error 429.
+
 ## NPM Modules
 
 The following npm modules are used in this project:

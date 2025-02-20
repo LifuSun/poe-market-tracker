@@ -54,7 +54,7 @@ const makeHttpsRequest = (url) => {
 };
 
 // Function to fetch and insert/update currency data
-const fetchAndInsertCurrencies = async () => {
+async function fetchAndInsertCurrencies() {
     try {
         // Fetch data from the Path of Exile API
         const data = await makeHttpsRequest(POE_API_URL);
@@ -120,4 +120,7 @@ const fetchAndInsertCurrencies = async () => {
 // Run the fetchAndInsertCurrencies function
 fetchAndInsertCurrencies();
 
-module.exports = router;
+module.exports = {
+    router,
+    fetchAndInsertCurrencies
+};

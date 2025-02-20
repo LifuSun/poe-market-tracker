@@ -61,13 +61,14 @@ const convertToMySQLDateTime = (isoDate) => {
 };
 
 // Function to fetch and insert/update league data
-const fetchAndInsertLeagues = async () => {
+async function fetchAndInsertLeagues() {
     try {
         // Fetch data from the Path of Exile API
         const data = await makeHttpsRequest(POE_API_URL);
 
         // Filter the data to get only current leagues in the PC realm
         const filteredData = data.filter(league => 
+            !league.id.includes('SSF') &&
             league.category.current === true && 
             league.realm === 'pc'
         );
@@ -148,4 +149,7 @@ const fetchAndInsertLeagues = async () => {
 // Run the fetchAndInsertLeagues function
 fetchAndInsertLeagues();
 
-module.exports = router;
+module.exports = {
+    router,
+    fetchAndInsertLeagues
+};

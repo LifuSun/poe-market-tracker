@@ -177,8 +177,8 @@ router.get('/prices/:shortName', async (req, res) => {
 
         const batchSize = 10;
         let prices = [];
-        let lowest = Infinity;
-        let highest = -Infinity;
+        let lowestPrice = Infinity;
+        let highestPrice = -Infinity;
         for (let i = 0; i < searchData.result.length; i += batchSize) {
             const itemIds = searchData.result.slice(i, i + batchSize);
             if (itemIds.length > 0) {
@@ -187,8 +187,8 @@ router.get('/prices/:shortName', async (req, res) => {
                 if (fetchData.result) {
                     const batchPrices = fetchData.result.map((item) => {
                         const price = item.listing.price.amount;
-                        if (price < lowest) lowest = price;
-                        if (price > highest) highest = price;
+                        if (price < lowestPrice) lowestPrice = price;
+                        if (price > highestPrice) highestPrice = price;
                         return price;
                     });
                     prices = prices.concat(batchPrices);
@@ -204,24 +204,40 @@ router.get('/prices/:shortName', async (req, res) => {
         const stats = calculateStatistics(prices);
         const checkedAt = new Date();
 
+        // Ensure all parameters are defined
+        const leagueId = league_id || 1; // Default to 1 if league_id is not provided
+        const wantCurrencyId = currencyId;
+        const haveCurrencyId = 4; // Assuming chaos orb has id 4 in the currencies table
+        const upperQuartile = stats.upperQuartile || null;
+        const lowerQuartile = stats.lowerQuartile || null;
+        const mode = stats.mode || null;
+        const median = stats.median || null;
+        const mean = stats.mean || null;
+        const lowest = lowestPrice !== Infinity ? lowestPrice : null;
+        const highest = highestPrice !== -Infinity ? highestPrice : null;
+        const interQuartileRange = stats.interQuartileRange || null;
+        const iqtMode = stats.iqtMode || null;
+        const iqtMedian = stats.iqtMedian || null;
+        const iqtMean = stats.iqtMean || null;
+
         // Insert the calculated statistics into the prices table
         await connection.execute(
             `INSERT INTO prices (leagueId, wantCurrencyId, haveCurrencyId, upperQuartile, lowerQuartile, mode, median, mean, lowest, highest, interQuartileRange, iqtMode, iqtMedian, iqtMean, checkedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                league_id || 1, // Default to 1 if league_id is not provided
-                currencyId,
-                1, // Assuming chaos orb has id 1 in the currencies table
-                stats.upperQuartile,
-                stats.lowerQuartile,
-                stats.mode,
-                stats.median,
-                stats.mean,
+                leagueId,
+                wantCurrencyId,
+                haveCurrencyId,
+                upperQuartile,
+                lowerQuartile,
+                mode,
+                median,
+                mean,
                 lowest,
                 highest,
-                stats.interQuartileRange,
-                stats.iqtMode,
-                stats.iqtMedian,
-                stats.iqtMean,
+                interQuartileRange,
+                iqtMode,
+                iqtMedian,
+                iqtMean,
                 checkedAt
             ]
         );

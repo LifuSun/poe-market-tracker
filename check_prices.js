@@ -96,7 +96,7 @@ const runPrices = async () => {
                         } catch (error) {
                             console.error(`Error fetching and processing prices for ${currency} in league ${leagueId}:`, error);
                         }
-                        await delay(10000); // Add a 10-second delay between each call
+                        await delay(30000); // Add a 10-second delay between each call
                     }
                 }
             } catch (error) {

@@ -100,7 +100,7 @@ const calculateStatistics = (prices) => {
 };
 
 // Route to get the price of an item relative to chaos orbs
-router.get('/prices/:shortName', async (req, res) => {
+router.get('/:shortName', async (req, res) => {
     const { shortName } = req.params;
     const { league_id } = req.query;
 

@@ -1,21 +1,21 @@
 const express = require('express');
 const { checkAndCreateTables } = require('./db');
 const pricesRouter = require('./routes/prices');
-const leaguesRouter = require('./routes/leagues');
-const currenciesRouter = require('./routes/currencies');
+const leaguesRouter = require('./routes/leagues').router;
+const currenciesRouter = require('./routes/currencies').router;
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Use the prices router
-app.use('/api', pricesRouter);
+app.use('/api/prices', pricesRouter);
 
 // Use the leagues router
-app.use('/api', leaguesRouter);
+app.use('/api/leagues', leaguesRouter);
 
 // Use the currencies router
-app.use('/api', currenciesRouter);
+app.use('/api/currencies', currenciesRouter);
 
 // Start the server and check/create tables
 app.listen(PORT, async () => {

@@ -172,7 +172,7 @@ router.get('/:shortName', async (req, res) => {
         console.log('Search Data:', JSON.stringify(searchData, null, 2));
 
         if (!searchData.result || searchData.result.length === 0) {
-            return res.status(404).json({ error: 'No results found for the specified currency and league' });
+            return res.status(200).json({ message: `No results found for currency ${currencyName} in league ${leagueToSearch}` });
         }
 
         const batchSize = 10;
@@ -198,7 +198,7 @@ router.get('/:shortName', async (req, res) => {
         }
 
         if (prices.length === 0) {
-            return res.status(404).json({ error: 'No prices found for the specified currency and league' });
+            return res.status(200).json({ message: `No prices found for currency ${currencyName} in league ${leagueToSearch}` });
         }
 
         const stats = calculateStatistics(prices);
@@ -249,7 +249,7 @@ router.get('/:shortName', async (req, res) => {
             prices: prices,
         });
     } catch (error) {
-        console.error('Error fetching currency price:', error);
+        console.error(`Error fetching currency price for ${currencyName} in league ${leagueToSearch}:`, error);
         res.status(500).json({ error: 'Failed to fetch currency price' });
     } finally {
         if (connection) {

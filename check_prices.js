@@ -2,7 +2,11 @@ const { exec } = require('child_process');
 const http = require('http');
 const https = require('https');
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const path = require('path');
+
+// Load .env file
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 // Database configuration
 const dbConfig = {
